@@ -20,9 +20,12 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 import javax.swing.JTable;
+import javax.swing.SwingWorker;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import org.apache.poi.EncryptedDocumentException;
@@ -45,22 +48,23 @@ public class FrmMain extends javax.swing.JFrame {
     /**
      * Creates new form FrmMain
      */
-    String path = null;//open
-    String path2 = null;//save
+    private String path = null;//open
+    private String path2 = null;//save
 
-    ArrayList<Employee> list = new ArrayList<>();
-    Employee employee = null;
+    private Employee employee = null;
 
-    Connection myConn = null;
-    PreparedStatement myStmt = null;
-    ResultSet myRs = null;
+    private Connection myConn = null;
+    private PreparedStatement myStmt = null;
+    private ResultSet myRs = null;
 
-    ArrayList<String> nimList = new ArrayList<>();
+    private ArrayList<String> nimList = new ArrayList<>();
 
-    String formatted;//date
-    String formatted2;
+    private String formatted;//date
+    private String formatted2;
 
-    ArrayList<Object[]> objectList = null;
+    private ArrayList<Object[]> objectList = null;
+
+    private LoadWorker worker;
 
     public FrmMain() {
         initComponents();
@@ -79,93 +83,87 @@ public class FrmMain extends javax.swing.JFrame {
                     DbConn.JDBC_PASSWORD);
 
         } catch (SQLException ex) {
-            System.out.println("Error:\n" + ex.getLocalizedMessage());
+            showError("sql Exception");
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(FrmMain.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
     private void openAndSaveToDatabase() {
+        // set label path
+        lblPath.setText("xls file: " + path);
+        lblPath2.setText("xls file: " + path);
 
-        if (fchOpen.showOpenDialog(this) != 1) {
+        try {
+            FileInputStream fileInputStream;
+            fileInputStream = new FileInputStream(path);
+            XSSFWorkbook workBook = new XSSFWorkbook(fileInputStream);
+            XSSFSheet workSheet = workBook.getSheetAt(0);
+            Iterator rowIter = workSheet.rowIterator();
 
-            // set label path
-            path = fchOpen.getSelectedFile().getAbsolutePath();
-            lblPath.setText(path);
-            lblPath2.setText(path);
+            int row = 0;
+            ArrayList<Employee> list = new ArrayList<>();
 
-            try {
-                System.out.println(path);
-                FileInputStream fileInputStream;
-                PreparedStatement pstm = null;
-                fileInputStream = new FileInputStream(path);
-                XSSFWorkbook workBook = new XSSFWorkbook(fileInputStream);
-                XSSFSheet workSheet = workBook.getSheetAt(0);
-
-                Iterator rowIter = workSheet.rowIterator();
-
-                int row = 0;
-                while (rowIter.hasNext()) {
-                    XSSFRow myRow = (XSSFRow) rowIter.next();
-                    Iterator cellIter = myRow.cellIterator();
-                    if (row == 0) {
-                        row++;
+            while (rowIter.hasNext()) {
+                XSSFRow myRow = (XSSFRow) rowIter.next();
+                Iterator cellIter = myRow.cellIterator();
+                if (row == 0) {
+                    row++;
+                    continue;
+                }
+                //Vector cellStoreVector=new Vector();
+                employee = new Employee();
+                int i = 1;
+                while (cellIter.hasNext()) {
+                    XSSFCell myCell = (XSSFCell) cellIter.next();
+                    if (i == 1) {
+                        employee.setDate(myCell.toString());
+                        i++;
                         continue;
                     }
-                    //Vector cellStoreVector=new Vector();
-                    employee = new Employee();
-                    int i = 1;
-                    while (cellIter.hasNext()) {
-                        XSSFCell myCell = (XSSFCell) cellIter.next();
-                        if (i == 1) {
-                            employee.setDate(myCell.toString());
-                            i++;
-                            continue;
-                        }
-                        if (i == 2) {
-                            employee.setTime(myCell.toString());
-                            i++;
-                            continue;
-                        }
-                        if (i == 3) {
-                            employee.setId(myCell.toString());
-                            employee.mergeDateAdnTime();
-                        }
+                    if (i == 2) {
+                        employee.setTime(myCell.toString());
+                        i++;
+                        continue;
                     }
-                    list.add(employee);
-
+                    if (i == 3) {
+                        employee.setId(myCell.toString());
+                        employee.mergeDateAdnTime();
+                    }
                 }
-                list.trimToSize();
+                list.add(employee);
 
-                for (int i = 0; i < list.size(); i++) {
-                    // Prepare statement
-
-                    myStmt = myConn.prepareStatement("insert into data_absensi values (?,?)");
-
-                    SimpleDateFormat formatDate = new SimpleDateFormat("yyyyMMddHHmmss");
-                    Date date = formatDate.parse(list.get(i).getDateTime());
-
-                    java.util.Date utilDate = new java.util.Date();
-                    java.sql.Timestamp timestamp = new java.sql.Timestamp(date.getTime());
-
-                    myStmt.setTimestamp(1, timestamp);
-                    myStmt.setString(2, list.get(i).getId());
-
-                    // Execute SQL query
-                    myStmt.executeUpdate();
-
-                }
-
-            } catch (FileNotFoundException ex) {
-                Logger.getLogger(FrmMain.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (IOException ex) {
-                Logger.getLogger(FrmMain.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (EncryptedDocumentException ex) {
-                Logger.getLogger(FrmMain.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (SQLException ex) {
-                Logger.getLogger(FrmMain.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (ParseException ex) {
             }
+            list.trimToSize();
+
+            for (int i = 0; i < list.size(); i++) {
+                // Prepare statement
+                double percentage = (double) i * ((double) 100 / (list.size() - 1));
+                pgbMain.setValue((int) percentage);
+                pgbMain2.setValue((int) percentage);
+                myStmt = myConn.prepareStatement("insert into data_absensi values (?,?)");
+
+                SimpleDateFormat formatDate = new SimpleDateFormat("yyyyMMddHHmmss");
+                Date date = formatDate.parse(list.get(i).getDateTime());
+
+                java.util.Date utilDate = new java.util.Date();
+                java.sql.Timestamp timestamp = new java.sql.Timestamp(date.getTime());
+
+                myStmt.setTimestamp(1, timestamp);
+                myStmt.setString(2, list.get(i).getId());
+
+                // Execute SQL query
+                myStmt.executeUpdate();
+            }
+
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(FrmMain.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException | EncryptedDocumentException | SQLException ex) {
+            showError("IO/sql exception");
+        } catch (ParseException ex) {
+            showError("parse error");
+            lblPath.setText("xls file: Error loading file");
+            lblPath2.setText("xls file: Error loading file");
         }
     }
 
@@ -194,7 +192,7 @@ public class FrmMain extends javax.swing.JFrame {
                 tableModel.addRow(data);
             }
         } catch (SQLException ex) {
-            Logger.getLogger(FrmMain.class.getName()).log(Level.SEVERE, null, ex);
+            showError("sql Exception");
         }
     }
 
@@ -223,7 +221,7 @@ public class FrmMain extends javax.swing.JFrame {
                 tableModel.addRow(data);
             }
         } catch (SQLException ex) {
-            Logger.getLogger(FrmMain.class.getName()).log(Level.SEVERE, null, ex);
+            showError("sql Exception");
         }
     }
 
@@ -244,7 +242,7 @@ public class FrmMain extends javax.swing.JFrame {
                 nimList.add(myRs.getString("nik"));
             }
         } catch (SQLException ex) {
-            Logger.getLogger(FrmMain.class.getName()).log(Level.SEVERE, null, ex);
+            showError("sql Exception");
         }
 
     }
@@ -263,9 +261,45 @@ public class FrmMain extends javax.swing.JFrame {
                 nimList.add(myRs.getString("nik"));
             }
         } catch (SQLException ex) {
-            Logger.getLogger(FrmMain.class.getName()).log(Level.SEVERE, null, ex);
+            showError("sql Exception");
         }
 
+    }
+
+    private class LoadWorker extends SwingWorker<Boolean, Void> {
+
+        @Override
+        protected void done() {
+            try {
+                if (get() != null) {
+                    pgbMain.setValue(100);
+                    pgbMain2.setValue(100);
+
+                    jMenuItem1.setEnabled(true);
+                    btnLoadData.setEnabled(true);
+                    btnLoadData2.setEnabled(true);
+                    btnExportToExcel.setEnabled(true);
+                    btnExportToExcel2.setEnabled(true);
+                }
+            } catch (InterruptedException | ExecutionException ex) {
+                Logger.getLogger(FrmMain.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
+        @Override
+        protected Boolean doInBackground() throws SQLException, InterruptedException {
+
+            pgbMain.setValue(0);
+            pgbMain2.setValue(0);
+
+            jMenuItem1.setEnabled(false);
+            btnLoadData.setEnabled(false);
+            btnLoadData2.setEnabled(false);
+            btnExportToExcel.setEnabled(false);
+            btnExportToExcel2.setEnabled(false);
+            openAndSaveToDatabase();
+            return true;
+        }
     }
 
     /**
@@ -287,6 +321,7 @@ public class FrmMain extends javax.swing.JFrame {
         dateChooserCombo = new datechooser.beans.DateChooserCombo();
         btnLoadData = new javax.swing.JButton();
         btnExportToExcel = new javax.swing.JButton();
+        pgbMain = new javax.swing.JProgressBar();
         jPanel2 = new javax.swing.JPanel();
         dateChooserCombo2 = new datechooser.beans.DateChooserCombo();
         lblPath2 = new javax.swing.JLabel();
@@ -297,6 +332,7 @@ public class FrmMain extends javax.swing.JFrame {
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
         dateChooserCombo3 = new datechooser.beans.DateChooserCombo();
+        pgbMain2 = new javax.swing.JProgressBar();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         jMenuItem1 = new javax.swing.JMenuItem();
@@ -358,6 +394,10 @@ public class FrmMain extends javax.swing.JFrame {
             }
         });
 
+        pgbMain.setBackground(new java.awt.Color(204, 204, 204));
+        pgbMain.setForeground(new java.awt.Color(0, 0, 0));
+        pgbMain.setStringPainted(true);
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -373,7 +413,9 @@ public class FrmMain extends javax.swing.JFrame {
                             .addGroup(jPanel1Layout.createSequentialGroup()
                                 .addComponent(dateChooserCombo, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(38, 38, 38)
-                                .addComponent(btnLoadData)))
+                                .addComponent(btnLoadData)
+                                .addGap(18, 18, 18)
+                                .addComponent(pgbMain, javax.swing.GroupLayout.PREFERRED_SIZE, 305, javax.swing.GroupLayout.PREFERRED_SIZE)))
                         .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
@@ -381,15 +423,16 @@ public class FrmMain extends javax.swing.JFrame {
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addComponent(lblPath)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(btnLoadData)
-                    .addComponent(dateChooserCombo, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                    .addComponent(dateChooserCombo, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(pgbMain, javax.swing.GroupLayout.PREFERRED_SIZE, 27, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(9, 9, 9)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 284, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(26, 26, 26)
                 .addComponent(btnExportToExcel, javax.swing.GroupLayout.PREFERRED_SIZE, 52, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 151, Short.MAX_VALUE))
+                .addGap(0, 149, Short.MAX_VALUE))
         );
 
         jTabbedPane1.addTab("Main", jPanel1);
@@ -454,6 +497,9 @@ public class FrmMain extends javax.swing.JFrame {
 
         dateChooserCombo3.setCalendarPreferredSize(new java.awt.Dimension(360, 300));
 
+        pgbMain2.setForeground(new java.awt.Color(0, 0, 0));
+        pgbMain2.setStringPainted(true);
+
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
@@ -470,9 +516,10 @@ public class FrmMain extends javax.swing.JFrame {
                                     .addComponent(jLabel2)
                                     .addComponent(dateChooserCombo3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                             .addGroup(jPanel2Layout.createSequentialGroup()
-                                .addGap(136, 136, 136)
-                                .addComponent(btnLoadData2, javax.swing.GroupLayout.PREFERRED_SIZE, 155, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGap(780, 780, 780))
+                                .addComponent(btnLoadData2, javax.swing.GroupLayout.PREFERRED_SIZE, 155, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(18, 18, 18)
+                                .addComponent(pgbMain2, javax.swing.GroupLayout.PREFERRED_SIZE, 305, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addGap(733, 733, Short.MAX_VALUE))
                     .addGroup(jPanel2Layout.createSequentialGroup()
                         .addComponent(btnExportToExcel2, javax.swing.GroupLayout.PREFERRED_SIZE, 161, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(0, 0, Short.MAX_VALUE))
@@ -494,16 +541,18 @@ public class FrmMain extends javax.swing.JFrame {
                     .addComponent(jLabel1)
                     .addComponent(jLabel2))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(dateChooserCombo3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(dateChooserCombo2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(btnLoadData2)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(dateChooserCombo3, javax.swing.GroupLayout.DEFAULT_SIZE, 25, Short.MAX_VALUE)
+                    .addComponent(dateChooserCombo2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(8, 8, 8)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(btnLoadData2)
+                    .addComponent(pgbMain2, javax.swing.GroupLayout.PREFERRED_SIZE, 27, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 284, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(btnExportToExcel2, javax.swing.GroupLayout.PREFERRED_SIZE, 52, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(118, Short.MAX_VALUE))
+                .addContainerGap(107, Short.MAX_VALUE))
         );
 
         jTabbedPane1.addTab("Main 2", jPanel2);
@@ -537,7 +586,11 @@ public class FrmMain extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
-        openAndSaveToDatabase();
+        if (fchOpen.showOpenDialog(this) != 1) {
+            path = fchOpen.getSelectedFile().getAbsolutePath();
+            worker = new LoadWorker();
+            worker.execute();
+        }
     }//GEN-LAST:event_jMenuItem1ActionPerformed
 
     private void btnLoadDataActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLoadDataActionPerformed
@@ -577,7 +630,6 @@ public class FrmMain extends javax.swing.JFrame {
             loadTableToObject(table);
 
             int rowNum = 0;
-            System.out.println("Creating excel");
 
             for (Object[] data : objectList) {
                 Row row = sheet.createRow(rowNum++);
@@ -598,13 +650,16 @@ public class FrmMain extends javax.swing.JFrame {
                 workbook.write(outputStream);
                 workbook.close();
             } catch (FileNotFoundException e) {
-                e.printStackTrace();
+                showError("File not found exception");
             } catch (IOException e) {
-                e.printStackTrace();
+                showError("IO exception");
             }
 
-            System.out.println("Done");
         }
+    }
+
+    private void showError(String msg) {
+        JOptionPane.showMessageDialog(this, msg, "Error", 1);
     }
 
     private void btnExportToExcelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExportToExcelActionPerformed
@@ -699,6 +754,8 @@ public class FrmMain extends javax.swing.JFrame {
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JLabel lblPath;
     private javax.swing.JLabel lblPath2;
+    private javax.swing.JProgressBar pgbMain;
+    private javax.swing.JProgressBar pgbMain2;
     private javax.swing.JTable tblAbsensi;
     private javax.swing.JTable tblAbsensi2;
     // End of variables declaration//GEN-END:variables
