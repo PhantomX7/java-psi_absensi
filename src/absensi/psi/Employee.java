@@ -44,9 +44,7 @@ public class Employee {
 
     public String getDateTime() {
         return dateTime;
-    }
-    
-    
+    }   
 
     @Override
     public String toString() {

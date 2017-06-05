@@ -161,7 +161,6 @@ public class FrmMain extends javax.swing.JFrame {
         } catch (IOException | EncryptedDocumentException | SQLException ex) {
             showError("IO/sql exception");
         } catch (ParseException ex) {
-            showError("parse error");
             lblPath.setText("xls file: Error loading file");
             lblPath2.setText("xls file: Error loading file");
         }
@@ -599,10 +598,9 @@ public class FrmMain extends javax.swing.JFrame {
         for (int i = tblAbsensi.getRowCount() - 1; i >= 0; i--) {
             tableModel.removeRow(i);
         }
-        for (String a : nimList) {
-            System.out.println(a);
+        nimList.forEach((a) -> {
             loadResultDataFromDatabase(a);
-        }
+        });
     }//GEN-LAST:event_btnLoadDataActionPerformed
 
     private void loadTableToObject(JTable table) {
@@ -725,10 +723,8 @@ public class FrmMain extends javax.swing.JFrame {
         //</editor-fold>
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new FrmMain().setVisible(true);
-            }
+        java.awt.EventQueue.invokeLater(() -> {
+            new FrmMain().setVisible(true);
         });
     }
 
