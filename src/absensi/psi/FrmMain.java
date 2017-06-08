@@ -161,8 +161,7 @@ public class FrmMain extends javax.swing.JFrame {
         } catch (IOException | EncryptedDocumentException | SQLException ex) {
             showError("IO/sql exception");
         } catch (ParseException ex) {
-            lblPath.setText("xls file: Error loading file");
-            lblPath2.setText("xls file: Error loading file");
+            
         }
     }
 
@@ -675,14 +674,12 @@ public class FrmMain extends javax.swing.JFrame {
         Date d2 = dateChooserCombo3.getSelectedDate().getTime();
         DateTime dt1 = new DateTime(d1);
         DateTime dt2 = new DateTime(d2);
-        System.out.println("here!!!");
-        for (int i = 1; i < Days.daysBetween(dt1, dt2).getDays(); i++) {
+        for (int i = 0; i <= Days.daysBetween(dt1, dt2).getDays(); i++) {
             SimpleDateFormat format1 = new SimpleDateFormat("yyyy-MM-dd");
             formattedDate = format1.format(d1.getTime());
             loadNikFromDatabase(format1.format(d1.getTime()));
 
             for (String a : nimList) {
-                System.out.println(a);
                 loadResultDataFromDatabase(a, formattedDate);
             }
 
