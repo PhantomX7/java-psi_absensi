@@ -5,6 +5,7 @@
  */
 package absensi.psi;
 
+import datechooser.beans.DateChooserCombo;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -45,9 +46,6 @@ import util.DbConn;
  */
 public class FrmMain extends javax.swing.JFrame {
 
-    /**
-     * Creates new form FrmMain
-     */
     private String path = null;//open
     private String path2 = null;//save
 
@@ -57,10 +55,7 @@ public class FrmMain extends javax.swing.JFrame {
     private PreparedStatement myStmt = null;
     private ResultSet myRs = null;
 
-    private ArrayList<String> nimList = new ArrayList<>();
-
-    private String formatted;//date
-    private String formatted2;
+    private final ArrayList<String> nimList = new ArrayList<>();
 
     private ArrayList<Object[]> objectList = null;
 
@@ -141,6 +136,7 @@ public class FrmMain extends javax.swing.JFrame {
                 double percentage = (double) i * ((double) 100 / (list.size() - 1));
                 pgbMain.setValue((int) percentage);
                 pgbMain2.setValue((int) percentage);
+                pgbMain3.setValue((int) percentage);
                 myStmt = myConn.prepareStatement("insert into data_absensi values (?,?)");
 
                 SimpleDateFormat formatDate = new SimpleDateFormat("yyyyMMddHHmmss");
@@ -161,42 +157,13 @@ public class FrmMain extends javax.swing.JFrame {
         } catch (IOException | EncryptedDocumentException | SQLException ex) {
             showError("IO/sql exception");
         } catch (ParseException ex) {
-            
+
         }
     }
 
-    private void loadResultDataFromDatabase(String nik) {
+    private void loadResultDataFromDatabase(String nik, String date, JTable table) {
 
-        DefaultTableModel tableModel = (DefaultTableModel) tblAbsensi.getModel();
-        try {
-            myStmt = myConn.prepareStatement("select nik,First_Name,Last_Name,Department,date(date) as date,min(time(date))"
-                    + " as sign_in,max(time(date)) as sign_out,timediff((select max(time(date))"
-                    + " from full_data where nik=? and date(date)=?),"
-                    + "(select min(time(date)) from full_data where nik=? and date(date)=?))"
-                    + " as working_hours  from full_data where nik=? and date(date)=? ");
-
-            myStmt.setString(1, nik);
-            myStmt.setString(2, formatted);
-            myStmt.setString(3, nik);
-            myStmt.setString(4, formatted);
-            myStmt.setString(5, nik);
-            myStmt.setString(6, formatted);
-            // Execute statement
-            myRs = myStmt.executeQuery();
-            // Process result set
-            while (myRs.next()) {
-                Object data[] = {myRs.getString("nik"), myRs.getString("first_name"), myRs.getString("last_name"), myRs.getString("Department"),
-                    myRs.getString("date"), myRs.getString("sign_in"), myRs.getString("sign_out"), myRs.getString("working_hours")};
-                tableModel.addRow(data);
-            }
-        } catch (SQLException ex) {
-            showError("sql Exception");
-        }
-    }
-
-    private void loadResultDataFromDatabase(String nik, String date) {
-
-        DefaultTableModel tableModel = (DefaultTableModel) tblAbsensi2.getModel();
+        DefaultTableModel tableModel = (DefaultTableModel) table.getModel();
         try {
             myStmt = myConn.prepareStatement("select nik,First_Name,Last_Name,Department,date(date) as date,min(time(date))"
                     + " as sign_in,max(time(date)) as sign_out,timediff((select max(time(date))"
@@ -214,7 +181,8 @@ public class FrmMain extends javax.swing.JFrame {
             myRs = myStmt.executeQuery();
             // Process result set
             while (myRs.next()) {
-                Object data[] = {myRs.getString("nik"), myRs.getString("first_name"), myRs.getString("last_name"), myRs.getString("Department"),
+
+                Object data[] = {nik, myRs.getString("first_name"), myRs.getString("last_name"), myRs.getString("Department"),
                     myRs.getString("date"), myRs.getString("sign_in"), myRs.getString("sign_out"), myRs.getString("working_hours")};
                 tableModel.addRow(data);
             }
@@ -223,26 +191,44 @@ public class FrmMain extends javax.swing.JFrame {
         }
     }
 
-    private void loadNikFromDatabase() {
+    //dosen tidak tetap
+    private void loadResultDataFromDatabase2(String nik, String date) {
+        ArrayList<Object> data = new ArrayList<>();
+        String firstName = "";
+        String lastName = "";
+        String department = "";
+
+        DefaultTableModel tableModel = (DefaultTableModel) tblAbsensi3.getModel();
         try {
-            nimList.clear();
+            myStmt = myConn.prepareStatement("select * from data_karyawan where nik=?;");
+            myStmt.setString(1, nik);
+            myRs = myStmt.executeQuery();
+            data.add(nik);
+            while (myRs.next()) {
+                firstName = myRs.getString("first_name");
+                lastName = myRs.getString("last_name");
+                department = myRs.getString("Department");
+            }
+            data.add(firstName);
+            data.add(lastName);
+            data.add(department);
+            data.add(date);
 
-            myStmt = myConn.prepareStatement("select nik from data_absensi where date(date)=? group by nik;");
-            Date date = dateChooserCombo.getSelectedDate().getTime();
-            SimpleDateFormat format1 = new SimpleDateFormat("yyyy-MM-dd");
-            formatted = format1.format(date.getTime());
-            myStmt.setString(1, formatted);
+            myStmt = myConn.prepareStatement("select time(date) as time from data_absensi where"
+                    + " nik=? and date(date)=?;");
 
+            myStmt.setString(1, nik);
+            myStmt.setString(2, date);
             // Execute statement
             myRs = myStmt.executeQuery();
             // Process result set
             while (myRs.next()) {
-                nimList.add(myRs.getString("nik"));
+                data.add(myRs.getString("time"));
             }
+            tableModel.addRow(data.toArray());
         } catch (SQLException ex) {
             showError("sql Exception");
         }
-
     }
 
     private void loadNikFromDatabase(String date) {
@@ -272,12 +258,10 @@ public class FrmMain extends javax.swing.JFrame {
                 if (get() != null) {
                     pgbMain.setValue(100);
                     pgbMain2.setValue(100);
+                    pgbMain3.setValue(100);
 
-                    jMenuItem1.setEnabled(true);
-                    btnLoadData.setEnabled(true);
-                    btnLoadData2.setEnabled(true);
-                    btnExportToExcel.setEnabled(true);
-                    btnExportToExcel2.setEnabled(true);
+                    disabledButtonWhenLoading(true);
+
                 }
             } catch (InterruptedException | ExecutionException ex) {
                 Logger.getLogger(FrmMain.class.getName()).log(Level.SEVERE, null, ex);
@@ -289,15 +273,21 @@ public class FrmMain extends javax.swing.JFrame {
 
             pgbMain.setValue(0);
             pgbMain2.setValue(0);
+            pgbMain3.setValue(0);
 
-            jMenuItem1.setEnabled(false);
-            btnLoadData.setEnabled(false);
-            btnLoadData2.setEnabled(false);
-            btnExportToExcel.setEnabled(false);
-            btnExportToExcel2.setEnabled(false);
+            disabledButtonWhenLoading(false);
             openAndSaveToDatabase();
             return true;
         }
+    }
+
+    private void disabledButtonWhenLoading(boolean b) {
+        jMenuItem1.setEnabled(b);
+        btnLoadData.setEnabled(b);
+        btnLoadData2.setEnabled(b);
+        btnLoadData3.setEnabled(b);
+        btnExportToExcel.setEnabled(b);
+        btnExportToExcel2.setEnabled(b);
     }
 
     /**
@@ -331,6 +321,17 @@ public class FrmMain extends javax.swing.JFrame {
         jLabel2 = new javax.swing.JLabel();
         dateChooserCombo3 = new datechooser.beans.DateChooserCombo();
         pgbMain2 = new javax.swing.JProgressBar();
+        jPanel3 = new javax.swing.JPanel();
+        dateChooserCombo4 = new datechooser.beans.DateChooserCombo();
+        btnLoadData3 = new javax.swing.JButton();
+        jScrollPane3 = new javax.swing.JScrollPane();
+        tblAbsensi3 = new javax.swing.JTable();
+        btnExportToExcel1 = new javax.swing.JButton();
+        lblPath3 = new javax.swing.JLabel();
+        pgbMain3 = new javax.swing.JProgressBar();
+        dateChooserCombo5 = new datechooser.beans.DateChooserCombo();
+        jLabel3 = new javax.swing.JLabel();
+        jLabel4 = new javax.swing.JLabel();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         jMenuItem1 = new javax.swing.JMenuItem();
@@ -366,7 +367,6 @@ public class FrmMain extends javax.swing.JFrame {
         });
         jScrollPane1.setViewportView(tblAbsensi);
         if (tblAbsensi.getColumnModel().getColumnCount() > 0) {
-            tblAbsensi.getColumnModel().getColumn(0).setResizable(false);
             tblAbsensi.getColumnModel().getColumn(1).setResizable(false);
             tblAbsensi.getColumnModel().getColumn(2).setResizable(false);
             tblAbsensi.getColumnModel().getColumn(3).setResizable(false);
@@ -403,7 +403,7 @@ public class FrmMain extends javax.swing.JFrame {
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(lblPath, javax.swing.GroupLayout.DEFAULT_SIZE, 1201, Short.MAX_VALUE)
+                    .addComponent(lblPath, javax.swing.GroupLayout.DEFAULT_SIZE, 1297, Short.MAX_VALUE)
                     .addComponent(jScrollPane1)
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -430,7 +430,7 @@ public class FrmMain extends javax.swing.JFrame {
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 284, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(26, 26, 26)
                 .addComponent(btnExportToExcel, javax.swing.GroupLayout.PREFERRED_SIZE, 52, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 149, Short.MAX_VALUE))
+                .addGap(0, 207, Short.MAX_VALUE))
         );
 
         jTabbedPane1.addTab("Main", jPanel1);
@@ -517,7 +517,7 @@ public class FrmMain extends javax.swing.JFrame {
                                 .addComponent(btnLoadData2, javax.swing.GroupLayout.PREFERRED_SIZE, 155, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(18, 18, 18)
                                 .addComponent(pgbMain2, javax.swing.GroupLayout.PREFERRED_SIZE, 305, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGap(733, 733, Short.MAX_VALUE))
+                        .addGap(829, 829, Short.MAX_VALUE))
                     .addGroup(jPanel2Layout.createSequentialGroup()
                         .addComponent(btnExportToExcel2, javax.swing.GroupLayout.PREFERRED_SIZE, 161, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(0, 0, Short.MAX_VALUE))
@@ -550,10 +550,130 @@ public class FrmMain extends javax.swing.JFrame {
                 .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 284, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(btnExportToExcel2, javax.swing.GroupLayout.PREFERRED_SIZE, 52, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(107, Short.MAX_VALUE))
+                .addContainerGap(165, Short.MAX_VALUE))
         );
 
         jTabbedPane1.addTab("Main 2", jPanel2);
+
+        dateChooserCombo4.setCalendarPreferredSize(new java.awt.Dimension(360, 300));
+
+        btnLoadData3.setText("Load data");
+        btnLoadData3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnLoadData3ActionPerformed(evt);
+            }
+        });
+
+        tblAbsensi3.setAutoCreateRowSorter(true);
+        tblAbsensi3.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+
+            },
+            new String [] {
+                "NIK", "First name", "Last name", "Department", "Date", "clock 1", "clock 2", "clock 3", "clock 4", "clock 5", "clock 6"
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Object.class, java.lang.Object.class
+            };
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false, false, false, false, false, false, false, false
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        jScrollPane3.setViewportView(tblAbsensi3);
+        if (tblAbsensi3.getColumnModel().getColumnCount() > 0) {
+            tblAbsensi3.getColumnModel().getColumn(1).setResizable(false);
+            tblAbsensi3.getColumnModel().getColumn(2).setResizable(false);
+            tblAbsensi3.getColumnModel().getColumn(3).setResizable(false);
+            tblAbsensi3.getColumnModel().getColumn(4).setResizable(false);
+            tblAbsensi3.getColumnModel().getColumn(5).setResizable(false);
+            tblAbsensi3.getColumnModel().getColumn(6).setResizable(false);
+            tblAbsensi3.getColumnModel().getColumn(7).setResizable(false);
+            tblAbsensi3.getColumnModel().getColumn(8).setResizable(false);
+            tblAbsensi3.getColumnModel().getColumn(9).setResizable(false);
+            tblAbsensi3.getColumnModel().getColumn(10).setResizable(false);
+        }
+
+        btnExportToExcel1.setText("Export to excel");
+        btnExportToExcel1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnExportToExcel1ActionPerformed(evt);
+            }
+        });
+
+        lblPath3.setText("xls file:");
+
+        pgbMain3.setForeground(new java.awt.Color(0, 0, 0));
+        pgbMain3.setStringPainted(true);
+
+        dateChooserCombo5.setCalendarPreferredSize(new java.awt.Dimension(360, 300));
+
+        jLabel3.setText("From:");
+
+        jLabel4.setText("to:");
+
+        javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
+        jPanel3.setLayout(jPanel3Layout);
+        jPanel3Layout.setHorizontalGroup(
+            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel3Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 1307, Short.MAX_VALUE)
+                    .addGroup(jPanel3Layout.createSequentialGroup()
+                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(lblPath3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addGroup(jPanel3Layout.createSequentialGroup()
+                                .addComponent(btnLoadData3, javax.swing.GroupLayout.PREFERRED_SIZE, 155, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(29, 29, 29)
+                                .addComponent(pgbMain3, javax.swing.GroupLayout.PREFERRED_SIZE, 303, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(0, 0, Short.MAX_VALUE)))
+                        .addContainerGap())
+                    .addGroup(jPanel3Layout.createSequentialGroup()
+                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(btnExportToExcel1, javax.swing.GroupLayout.PREFERRED_SIZE, 161, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(jPanel3Layout.createSequentialGroup()
+                                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(dateChooserCombo4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jLabel3))
+                                .addGap(101, 101, 101)
+                                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jLabel4)
+                                    .addComponent(dateChooserCombo5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                        .addGap(0, 0, Short.MAX_VALUE))))
+        );
+        jPanel3Layout.setVerticalGroup(
+            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel3Layout.createSequentialGroup()
+                .addComponent(lblPath3)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel3)
+                    .addComponent(jLabel4))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(dateChooserCombo4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(dateChooserCombo5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(18, 18, 18)
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(btnLoadData3)
+                    .addComponent(pgbMain3, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 284, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(26, 26, 26)
+                .addComponent(btnExportToExcel1, javax.swing.GroupLayout.PREFERRED_SIZE, 52, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(144, 144, 144))
+        );
+
+        jTabbedPane1.addTab("Main 3", jPanel3);
 
         jMenu1.setText("File");
 
@@ -593,12 +713,18 @@ public class FrmMain extends javax.swing.JFrame {
 
     private void btnLoadDataActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLoadDataActionPerformed
         DefaultTableModel tableModel = (DefaultTableModel) tblAbsensi.getModel();
-        loadNikFromDatabase();
+
+        Date date = dateChooserCombo.getSelectedDate().getTime();
+        SimpleDateFormat format1 = new SimpleDateFormat("yyyy-MM-dd");
+        String formatted = format1.format(date.getTime());
+
+        loadNikFromDatabase(formatted);
+
         for (int i = tblAbsensi.getRowCount() - 1; i >= 0; i--) {
             tableModel.removeRow(i);
         }
         nimList.forEach((a) -> {
-            loadResultDataFromDatabase(a);
+            loadResultDataFromDatabase(a, formatted, tblAbsensi);
         });
     }//GEN-LAST:event_btnLoadDataActionPerformed
 
@@ -615,6 +741,21 @@ public class FrmMain extends javax.swing.JFrame {
         }
     }
 
+    private void loadTableToObject2(JTable table) {
+        objectList = new ArrayList<>();
+        Object[] a = {"NIK", "First Name", "Last Name", "Department", "Date", "Clock 1", "Clock 2", "Clock 3", "Clock 4",
+            "Clock 5", "Clock 6"};
+        objectList.add(a);
+        DefaultTableModel tableModel = (DefaultTableModel) table.getModel();
+        for (int i = 0; i <= table.getRowCount() - 1; i++) {
+            Object[] b = {tableModel.getValueAt(i, 0), tableModel.getValueAt(i, 1), tableModel.getValueAt(i, 2),
+                tableModel.getValueAt(i, 3), tableModel.getValueAt(i, 4), tableModel.getValueAt(i, 5),
+                tableModel.getValueAt(i, 6), tableModel.getValueAt(i, 7), tableModel.getValueAt(i, 8),
+                tableModel.getValueAt(i, 9), tableModel.getValueAt(i, 10)};
+            objectList.add(b);
+        }
+    }
+
     private void exportToExcel(JTable table) {
         if (fchOpen.showSaveDialog(this) != 1) {
 
@@ -624,7 +765,11 @@ public class FrmMain extends javax.swing.JFrame {
             XSSFWorkbook workbook = new XSSFWorkbook();
             XSSFSheet sheet = workbook.createSheet("Report");
 
-            loadTableToObject(table);
+            if (table.equals(tblAbsensi3)) {
+                loadTableToObject2(table);
+            } else {
+                loadTableToObject(table);
+            }
 
             int rowNum = 0;
 
@@ -659,41 +804,55 @@ public class FrmMain extends javax.swing.JFrame {
         JOptionPane.showMessageDialog(this, msg, "Error", 1);
     }
 
-    private void btnExportToExcelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExportToExcelActionPerformed
-        exportToExcel(tblAbsensi);
-    }//GEN-LAST:event_btnExportToExcelActionPerformed
-
-    private void btnLoadData2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLoadData2ActionPerformed
-
-        DefaultTableModel tableModel = (DefaultTableModel) tblAbsensi2.getModel();
-        for (int i = tblAbsensi2.getRowCount() - 1; i >= 0; i--) {
+    private void loadDatawithMultipleDate(JTable table, DateChooserCombo dateA, DateChooserCombo dateB) {
+        DefaultTableModel tableModel = (DefaultTableModel) table.getModel();
+        for (int i = table.getRowCount() - 1; i >= 0; i--) {
             tableModel.removeRow(i);
         }
         String formattedDate;
-        Date d1 = dateChooserCombo2.getSelectedDate().getTime();
-        Date d2 = dateChooserCombo3.getSelectedDate().getTime();
+        Date d1 = dateA.getSelectedDate().getTime();
+        Date d2 = dateB.getSelectedDate().getTime();
         DateTime dt1 = new DateTime(d1);
         DateTime dt2 = new DateTime(d2);
+        SimpleDateFormat format1 = new SimpleDateFormat("yyyy-MM-dd");
         for (int i = 0; i <= Days.daysBetween(dt1, dt2).getDays(); i++) {
-            SimpleDateFormat format1 = new SimpleDateFormat("yyyy-MM-dd");
             formattedDate = format1.format(d1.getTime());
             loadNikFromDatabase(format1.format(d1.getTime()));
 
             for (String a : nimList) {
-                loadResultDataFromDatabase(a, formattedDate);
+                if (table.equals(tblAbsensi2)) {
+                    loadResultDataFromDatabase(a, formattedDate, table);
+                } else {
+                    loadResultDataFromDatabase2(a, formattedDate);
+                }
             }
 
             Calendar c = Calendar.getInstance();
             c.setTime(d1);
             c.add(Calendar.DATE, 1);  // number of days to add
             d1 = c.getTime();
-            System.out.println(d1);
         }
+    }
+
+    private void btnExportToExcelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExportToExcelActionPerformed
+        exportToExcel(tblAbsensi);
+    }//GEN-LAST:event_btnExportToExcelActionPerformed
+
+    private void btnLoadData2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLoadData2ActionPerformed
+        loadDatawithMultipleDate(tblAbsensi2, dateChooserCombo2, dateChooserCombo3);
     }//GEN-LAST:event_btnLoadData2ActionPerformed
 
     private void btnExportToExcel2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExportToExcel2ActionPerformed
         exportToExcel(tblAbsensi2);
     }//GEN-LAST:event_btnExportToExcel2ActionPerformed
+
+    private void btnLoadData3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLoadData3ActionPerformed
+        loadDatawithMultipleDate(tblAbsensi3, dateChooserCombo4, dateChooserCombo5);
+    }//GEN-LAST:event_btnLoadData3ActionPerformed
+
+    private void btnExportToExcel1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExportToExcel1ActionPerformed
+        exportToExcel(tblAbsensi3);
+    }//GEN-LAST:event_btnExportToExcel1ActionPerformed
 
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
@@ -727,29 +886,40 @@ public class FrmMain extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnExportToExcel;
+    private javax.swing.JButton btnExportToExcel1;
     private javax.swing.JButton btnExportToExcel2;
     private javax.swing.JButton btnLoadData;
     private javax.swing.JButton btnLoadData2;
+    private javax.swing.JButton btnLoadData3;
     private datechooser.beans.DateChooserCombo dateChooserCombo;
     private datechooser.beans.DateChooserCombo dateChooserCombo2;
     private datechooser.beans.DateChooserCombo dateChooserCombo3;
+    private datechooser.beans.DateChooserCombo dateChooserCombo4;
+    private datechooser.beans.DateChooserCombo dateChooserCombo5;
     private javax.swing.JFileChooser fchOpen;
     private javax.swing.JFileChooser fchSave;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel jPanel3;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JLabel lblPath;
     private javax.swing.JLabel lblPath2;
+    private javax.swing.JLabel lblPath3;
     private javax.swing.JProgressBar pgbMain;
     private javax.swing.JProgressBar pgbMain2;
+    private javax.swing.JProgressBar pgbMain3;
     private javax.swing.JTable tblAbsensi;
     private javax.swing.JTable tblAbsensi2;
+    private javax.swing.JTable tblAbsensi3;
     // End of variables declaration//GEN-END:variables
 }
