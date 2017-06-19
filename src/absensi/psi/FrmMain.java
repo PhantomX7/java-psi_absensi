@@ -38,6 +38,12 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.joda.time.DateTime;
 import org.joda.time.Days;
+import org.joda.time.Period;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.PeriodFormat;
+import org.joda.time.format.PeriodFormatter;
+import org.joda.time.format.PeriodFormatterBuilder;
 import util.DbConn;
 
 /**
@@ -197,6 +203,7 @@ public class FrmMain extends javax.swing.JFrame {
         String firstName = "";
         String lastName = "";
         String department = "";
+        ArrayList<Object> time = new ArrayList<>();
 
         DefaultTableModel tableModel = (DefaultTableModel) tblAbsensi3.getModel();
         try {
@@ -222,9 +229,23 @@ public class FrmMain extends javax.swing.JFrame {
             // Execute statement
             myRs = myStmt.executeQuery();
             // Process result set
+            int i = 1;
             while (myRs.next()) {
                 data.add(myRs.getString("time"));
+                i++;
             }
+            for (int x = i; x <= 8; x++) {
+                data.add("");
+            }
+
+            DateTimeFormatter formatter = DateTimeFormat.forPattern("HH:mm:ss");
+
+            DateTime d1 = formatter.parseDateTime((String) data.get(5));
+            DateTime d2 = formatter.parseDateTime((String) data.get(3 + i));
+
+            Period period = new Period(d1, d2);
+            data.add(String.format("%02d:%02d:%02d", period.getHours(), period.getMinutes(), period.getSeconds()));
+
             tableModel.addRow(data.toArray());
         } catch (SQLException ex) {
             showError("sql Exception");
@@ -403,7 +424,7 @@ public class FrmMain extends javax.swing.JFrame {
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(lblPath, javax.swing.GroupLayout.DEFAULT_SIZE, 1297, Short.MAX_VALUE)
+                    .addComponent(lblPath, javax.swing.GroupLayout.DEFAULT_SIZE, 1461, Short.MAX_VALUE)
                     .addComponent(jScrollPane1)
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -517,7 +538,7 @@ public class FrmMain extends javax.swing.JFrame {
                                 .addComponent(btnLoadData2, javax.swing.GroupLayout.PREFERRED_SIZE, 155, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(18, 18, 18)
                                 .addComponent(pgbMain2, javax.swing.GroupLayout.PREFERRED_SIZE, 305, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGap(829, 829, Short.MAX_VALUE))
+                        .addGap(993, 993, Short.MAX_VALUE))
                     .addGroup(jPanel2Layout.createSequentialGroup()
                         .addComponent(btnExportToExcel2, javax.swing.GroupLayout.PREFERRED_SIZE, 161, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(0, 0, Short.MAX_VALUE))
@@ -570,14 +591,14 @@ public class FrmMain extends javax.swing.JFrame {
 
             },
             new String [] {
-                "NIK", "First name", "Last name", "Department", "Date", "clock 1", "clock 2", "clock 3", "clock 4", "clock 5", "clock 6"
+                "NIK", "First name", "Last name", "Department", "Date", "clock 1", "clock 2", "clock 3", "clock 4", "clock 5", "clock 6", "clock 7", "clock 8", "Total hours"
             }
         ) {
             Class[] types = new Class [] {
-                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Object.class, java.lang.Object.class
+                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Object.class, java.lang.Object.class, java.lang.Object.class, java.lang.Object.class, java.lang.Object.class
             };
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false, false, false, false
+                false, false, false, false, false, false, false, false, false, false, false, false, false, false
             };
 
             public Class getColumnClass(int columnIndex) {
@@ -600,6 +621,9 @@ public class FrmMain extends javax.swing.JFrame {
             tblAbsensi3.getColumnModel().getColumn(8).setResizable(false);
             tblAbsensi3.getColumnModel().getColumn(9).setResizable(false);
             tblAbsensi3.getColumnModel().getColumn(10).setResizable(false);
+            tblAbsensi3.getColumnModel().getColumn(11).setResizable(false);
+            tblAbsensi3.getColumnModel().getColumn(12).setResizable(false);
+            tblAbsensi3.getColumnModel().getColumn(13).setResizable(false);
         }
 
         btnExportToExcel1.setText("Export to excel");
@@ -627,7 +651,7 @@ public class FrmMain extends javax.swing.JFrame {
             .addGroup(jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 1307, Short.MAX_VALUE)
+                    .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 1471, Short.MAX_VALUE)
                     .addGroup(jPanel3Layout.createSequentialGroup()
                         .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(lblPath3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -693,7 +717,7 @@ public class FrmMain extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jTabbedPane1)
+            .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 1486, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -744,14 +768,15 @@ public class FrmMain extends javax.swing.JFrame {
     private void loadTableToObject2(JTable table) {
         objectList = new ArrayList<>();
         Object[] a = {"NIK", "First Name", "Last Name", "Department", "Date", "Clock 1", "Clock 2", "Clock 3", "Clock 4",
-            "Clock 5", "Clock 6"};
+            "Clock 5", "Clock 6","Clock 7","Clock 8","Total Hours"};
         objectList.add(a);
         DefaultTableModel tableModel = (DefaultTableModel) table.getModel();
         for (int i = 0; i <= table.getRowCount() - 1; i++) {
             Object[] b = {tableModel.getValueAt(i, 0), tableModel.getValueAt(i, 1), tableModel.getValueAt(i, 2),
                 tableModel.getValueAt(i, 3), tableModel.getValueAt(i, 4), tableModel.getValueAt(i, 5),
                 tableModel.getValueAt(i, 6), tableModel.getValueAt(i, 7), tableModel.getValueAt(i, 8),
-                tableModel.getValueAt(i, 9), tableModel.getValueAt(i, 10)};
+                tableModel.getValueAt(i, 9), tableModel.getValueAt(i, 10),tableModel.getValueAt(i, 11),
+                tableModel.getValueAt(i, 12),tableModel.getValueAt(i, 13)};
             objectList.add(b);
         }
     }
@@ -867,15 +892,11 @@ public class FrmMain extends javax.swing.JFrame {
                     break;
                 }
             }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(FrmMain.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(FrmMain.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(FrmMain.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
             java.util.logging.Logger.getLogger(FrmMain.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
+        //</editor-fold>
+
         //</editor-fold>
 
         /* Create and display the form */
