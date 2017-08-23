@@ -167,30 +167,72 @@ public class FrmMain extends javax.swing.JFrame {
     private void loadResultDataFromDatabase(String nik, String date, JTable table) {
 
         DefaultTableModel tableModel = (DefaultTableModel) table.getModel();
+//        try {
+//            myStmt = myConn.prepareStatement("select nik,First_Name,Last_Name,Department,date(date) as date,min(time(date))"
+//                    + " as sign_in,max(time(date)) as sign_out,timediff((select max(time(date))"
+//                    + " from full_data where nik=? and date(date)=?),"
+//                    + "(select min(time(date)) from full_data where nik=? and date(date)=?))"
+//                    + " as working_hours  from full_data where nik=? and date(date)=? ");
+//
+//            myStmt.setString(1, nik);
+//            myStmt.setString(2, date);
+//            myStmt.setString(3, nik);
+//            myStmt.setString(4, date);
+//            myStmt.setString(5, nik);
+//            myStmt.setString(6, date);
+//            // Execute statement
+//            myRs = myStmt.executeQuery();
+//            // Process result set
+//            while (myRs.next()) {
+//
+//                Object data[] = {nik, myRs.getString("first_name"), myRs.getString("last_name"), myRs.getString("Department"),
+//                    myRs.getString("date"), myRs.getString("sign_in"), myRs.getString("sign_out"), myRs.getString("working_hours")};
+//                tableModel.addRow(data);
+//            }
+//        } catch (SQLException ex) {
+//            showError("sql Exception");
+//        }
+
+        ArrayList<Object> data = new ArrayList<>();
+
         try {
-            myStmt = myConn.prepareStatement("select nik,First_Name,Last_Name,Department,date(date) as date,min(time(date))"
-                    + " as sign_in,max(time(date)) as sign_out,timediff((select max(time(date))"
-                    + " from full_data where nik=? and date(date)=?),"
+            myStmt = myConn.prepareStatement("select * from data_karyawan where nik=?;");
+            myStmt.setString(1, nik);
+            myRs = myStmt.executeQuery();
+            data.add(nik);
+            if (myRs.isBeforeFirst()) {
+                while (myRs.next()) {
+                        data.add(myRs.getString("first_name"));
+                        data.add(myRs.getString("last_name"));
+                        data.add(myRs.getString("Department"));
+                }
+            } else {
+                data.add("");
+                data.add("");
+                data.add("");
+            }
+            data.add(date);
+
+            myStmt = myConn.prepareStatement("select min(time(date))"
+                    + "as sign_in,max(time(date)) as sign_out,timediff((select max(time(date))"
+                    + "from full_data where nik=? and date(date)=?),"
                     + "(select min(time(date)) from full_data where nik=? and date(date)=?))"
                     + " as working_hours  from full_data where nik=? and date(date)=? ");
-
             myStmt.setString(1, nik);
             myStmt.setString(2, date);
             myStmt.setString(3, nik);
             myStmt.setString(4, date);
             myStmt.setString(5, nik);
             myStmt.setString(6, date);
-            // Execute statement
             myRs = myStmt.executeQuery();
-            // Process result set
             while (myRs.next()) {
-
-                Object data[] = {nik, myRs.getString("first_name"), myRs.getString("last_name"), myRs.getString("Department"),
-                    myRs.getString("date"), myRs.getString("sign_in"), myRs.getString("sign_out"), myRs.getString("working_hours")};
-                tableModel.addRow(data);
+                data.add(myRs.getString("sign_in"));
+                data.add(myRs.getString("sign_out"));
+                data.add(myRs.getString("working_hours"));
             }
+            tableModel.addRow(data.toArray());
         } catch (SQLException ex) {
-            showError("sql Exception");
+            Logger.getLogger(FrmMain.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -765,15 +807,15 @@ public class FrmMain extends javax.swing.JFrame {
     private void loadTableToObject2(JTable table) {
         objectList = new ArrayList<>();
         Object[] a = {"NIK", "First Name", "Last Name", "Department", "Date", "Clock 1", "Clock 2", "Clock 3", "Clock 4",
-            "Clock 5", "Clock 6","Clock 7","Clock 8","Total Hours"};
+            "Clock 5", "Clock 6", "Clock 7", "Clock 8", "Total Hours"};
         objectList.add(a);
         DefaultTableModel tableModel = (DefaultTableModel) table.getModel();
         for (int i = 0; i <= table.getRowCount() - 1; i++) {
             Object[] b = {tableModel.getValueAt(i, 0), tableModel.getValueAt(i, 1), tableModel.getValueAt(i, 2),
                 tableModel.getValueAt(i, 3), tableModel.getValueAt(i, 4), tableModel.getValueAt(i, 5),
                 tableModel.getValueAt(i, 6), tableModel.getValueAt(i, 7), tableModel.getValueAt(i, 8),
-                tableModel.getValueAt(i, 9), tableModel.getValueAt(i, 10),tableModel.getValueAt(i, 11),
-                tableModel.getValueAt(i, 12),tableModel.getValueAt(i, 13)};
+                tableModel.getValueAt(i, 9), tableModel.getValueAt(i, 10), tableModel.getValueAt(i, 11),
+                tableModel.getValueAt(i, 12), tableModel.getValueAt(i, 13)};
             objectList.add(b);
         }
     }
