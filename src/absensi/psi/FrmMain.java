@@ -96,63 +96,69 @@ public class FrmMain extends javax.swing.JFrame {
             FileInputStream fileInputStream;
             fileInputStream = new FileInputStream(path);
             XSSFWorkbook workBook = new XSSFWorkbook(fileInputStream);
-            XSSFSheet workSheet = workBook.getSheetAt(0);
-            Iterator rowIter = workSheet.rowIterator();
+            for (int x = 0; x < workBook.getNumberOfSheets(); x++) {
+                XSSFSheet workSheet = workBook.getSheetAt(x);
+                Iterator rowIter = workSheet.rowIterator();
 
-            int row = 0;
-            ArrayList<Employee> list = new ArrayList<>();
+                int row = 0;
+                ArrayList<Employee> list = new ArrayList<>();
 
-            while (rowIter.hasNext()) {
-                XSSFRow myRow = (XSSFRow) rowIter.next();
-                Iterator cellIter = myRow.cellIterator();
-                if (row == 0) {
-                    row++;
-                    continue;
-                }
-                //Vector cellStoreVector=new Vector();
-                employee = new Employee();
-                int i = 1;
-                while (cellIter.hasNext()) {
-                    XSSFCell myCell = (XSSFCell) cellIter.next();
-                    if (i == 1) {
-                        employee.setDate(myCell.toString());
-                        i++;
+                while (rowIter.hasNext()) {
+                    XSSFRow myRow = (XSSFRow) rowIter.next();
+                    Iterator cellIter = myRow.cellIterator();
+                    if (row == 0) {
+                        row++;
                         continue;
                     }
-                    if (i == 2) {
-                        employee.setTime(myCell.toString());
-                        i++;
-                        continue;
+                    //Vector cellStoreVector=new Vector();
+                    employee = new Employee();
+                    int i = 1;
+                    while (cellIter.hasNext()) {
+                        XSSFCell myCell = (XSSFCell) cellIter.next();
+                        if (i == 1) {
+                            employee.setDate(myCell.toString());
+                            i++;
+                            continue;
+                        }
+                        if (i == 2) {
+                            employee.setTime(myCell.toString());
+                            i++;
+                            continue;
+                        }
+                        if (i == 3) {
+                            employee.setId(myCell.toString());
+                            employee.mergeDateAdnTime();
+                        }
                     }
-                    if (i == 3) {
-                        employee.setId(myCell.toString());
-                        employee.mergeDateAdnTime();
-                    }
+                    list.add(employee);
+
                 }
-                list.add(employee);
+                list.trimToSize();
 
-            }
-            list.trimToSize();
+                for (int i = 0; i < list.size(); i++) {
+                    // Prepare statement
+                    lblSheetMain1.setText("Sheet "+(x+1)+"/"+workBook.getNumberOfSheets());
+                    lblSheetMain2.setText("Sheet "+(x+1)+"/"+workBook.getNumberOfSheets());
+                    lblSheetMain3.setText("Sheet "+(x+1)+"/"+workBook.getNumberOfSheets());
+                    
+                    double percentage = (double) i * ((double) 100 / (list.size() - 1));
+                    pgbMain.setValue((int) percentage);
+                    pgbMain2.setValue((int) percentage);
+                    pgbMain3.setValue((int) percentage);
+                    myStmt = myConn.prepareStatement("insert into data_absensi values (?,?)");
 
-            for (int i = 0; i < list.size(); i++) {
-                // Prepare statement
-                double percentage = (double) i * ((double) 100 / (list.size() - 1));
-                pgbMain.setValue((int) percentage);
-                pgbMain2.setValue((int) percentage);
-                pgbMain3.setValue((int) percentage);
-                myStmt = myConn.prepareStatement("insert into data_absensi values (?,?)");
+                    SimpleDateFormat formatDate = new SimpleDateFormat("yyyyMMddHHmmss");
+                    Date date = formatDate.parse(list.get(i).getDateTime());
 
-                SimpleDateFormat formatDate = new SimpleDateFormat("yyyyMMddHHmmss");
-                Date date = formatDate.parse(list.get(i).getDateTime());
+                    java.util.Date utilDate = new java.util.Date();
+                    java.sql.Timestamp timestamp = new java.sql.Timestamp(date.getTime());
 
-                java.util.Date utilDate = new java.util.Date();
-                java.sql.Timestamp timestamp = new java.sql.Timestamp(date.getTime());
+                    myStmt.setTimestamp(1, timestamp);
+                    myStmt.setString(2, list.get(i).getId());
 
-                myStmt.setTimestamp(1, timestamp);
-                myStmt.setString(2, list.get(i).getId());
-
-                // Execute SQL query
-                myStmt.executeUpdate();
+                    // Execute SQL query
+                    myStmt.executeUpdate();
+                }
             }
 
         } catch (FileNotFoundException ex) {
@@ -202,9 +208,9 @@ public class FrmMain extends javax.swing.JFrame {
             data.add(nik);
             if (myRs.isBeforeFirst()) {
                 while (myRs.next()) {
-                        data.add(myRs.getString("first_name"));
-                        data.add(myRs.getString("last_name"));
-                        data.add(myRs.getString("Department"));
+                    data.add(myRs.getString("first_name"));
+                    data.add(myRs.getString("last_name"));
+                    data.add(myRs.getString("Department"));
                 }
             } else {
                 data.add("");
@@ -370,6 +376,7 @@ public class FrmMain extends javax.swing.JFrame {
         btnLoadData = new javax.swing.JButton();
         btnExportToExcel = new javax.swing.JButton();
         pgbMain = new javax.swing.JProgressBar();
+        lblSheetMain1 = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
         dateChooserCombo2 = new datechooser.beans.DateChooserCombo();
         lblPath2 = new javax.swing.JLabel();
@@ -381,6 +388,7 @@ public class FrmMain extends javax.swing.JFrame {
         jLabel2 = new javax.swing.JLabel();
         dateChooserCombo3 = new datechooser.beans.DateChooserCombo();
         pgbMain2 = new javax.swing.JProgressBar();
+        lblSheetMain2 = new javax.swing.JLabel();
         jPanel3 = new javax.swing.JPanel();
         dateChooserCombo4 = new datechooser.beans.DateChooserCombo();
         btnLoadData3 = new javax.swing.JButton();
@@ -392,6 +400,7 @@ public class FrmMain extends javax.swing.JFrame {
         dateChooserCombo5 = new datechooser.beans.DateChooserCombo();
         jLabel3 = new javax.swing.JLabel();
         jLabel4 = new javax.swing.JLabel();
+        lblSheetMain3 = new javax.swing.JLabel();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         jMenuItem1 = new javax.swing.JMenuItem();
@@ -456,6 +465,8 @@ public class FrmMain extends javax.swing.JFrame {
         pgbMain.setForeground(new java.awt.Color(0, 0, 0));
         pgbMain.setStringPainted(true);
 
+        lblSheetMain1.setText(" ");
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -473,7 +484,9 @@ public class FrmMain extends javax.swing.JFrame {
                                 .addGap(38, 38, 38)
                                 .addComponent(btnLoadData)
                                 .addGap(18, 18, 18)
-                                .addComponent(pgbMain, javax.swing.GroupLayout.PREFERRED_SIZE, 305, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                .addComponent(pgbMain, javax.swing.GroupLayout.PREFERRED_SIZE, 305, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(18, 18, 18)
+                                .addComponent(lblSheetMain1, javax.swing.GroupLayout.PREFERRED_SIZE, 88, javax.swing.GroupLayout.PREFERRED_SIZE)))
                         .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
@@ -485,7 +498,9 @@ public class FrmMain extends javax.swing.JFrame {
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(btnLoadData)
                     .addComponent(dateChooserCombo, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(pgbMain, javax.swing.GroupLayout.PREFERRED_SIZE, 27, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(pgbMain, javax.swing.GroupLayout.PREFERRED_SIZE, 27, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(lblSheetMain1)))
                 .addGap(9, 9, 9)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 284, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(26, 26, 26)
@@ -558,6 +573,8 @@ public class FrmMain extends javax.swing.JFrame {
         pgbMain2.setForeground(new java.awt.Color(0, 0, 0));
         pgbMain2.setStringPainted(true);
 
+        lblSheetMain2.setText(" ");
+
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
@@ -576,8 +593,10 @@ public class FrmMain extends javax.swing.JFrame {
                             .addGroup(jPanel2Layout.createSequentialGroup()
                                 .addComponent(btnLoadData2, javax.swing.GroupLayout.PREFERRED_SIZE, 155, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(18, 18, 18)
-                                .addComponent(pgbMain2, javax.swing.GroupLayout.PREFERRED_SIZE, 305, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGap(993, 993, Short.MAX_VALUE))
+                                .addComponent(pgbMain2, javax.swing.GroupLayout.PREFERRED_SIZE, 305, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(18, 18, 18)
+                                .addComponent(lblSheetMain2, javax.swing.GroupLayout.PREFERRED_SIZE, 88, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addGap(887, 887, Short.MAX_VALUE))
                     .addGroup(jPanel2Layout.createSequentialGroup()
                         .addComponent(btnExportToExcel2, javax.swing.GroupLayout.PREFERRED_SIZE, 161, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(0, 0, Short.MAX_VALUE))
@@ -605,7 +624,9 @@ public class FrmMain extends javax.swing.JFrame {
                 .addGap(8, 8, 8)
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(btnLoadData2)
-                    .addComponent(pgbMain2, javax.swing.GroupLayout.PREFERRED_SIZE, 27, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(pgbMain2, javax.swing.GroupLayout.PREFERRED_SIZE, 27, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(lblSheetMain2)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 284, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
@@ -683,6 +704,8 @@ public class FrmMain extends javax.swing.JFrame {
 
         jLabel4.setText("to:");
 
+        lblSheetMain3.setText(" ");
+
         javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
         jPanel3Layout.setHorizontalGroup(
@@ -698,6 +721,8 @@ public class FrmMain extends javax.swing.JFrame {
                                 .addComponent(btnLoadData3, javax.swing.GroupLayout.PREFERRED_SIZE, 155, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(29, 29, 29)
                                 .addComponent(pgbMain3, javax.swing.GroupLayout.PREFERRED_SIZE, 303, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(18, 18, 18)
+                                .addComponent(lblSheetMain3, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(0, 0, Short.MAX_VALUE)))
                         .addContainerGap())
                     .addGroup(jPanel3Layout.createSequentialGroup()
@@ -728,7 +753,8 @@ public class FrmMain extends javax.swing.JFrame {
                 .addGap(18, 18, 18)
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnLoadData3)
-                    .addComponent(pgbMain3, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(pgbMain3, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(lblSheetMain3))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 284, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(26, 26, 26)
@@ -756,7 +782,7 @@ public class FrmMain extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 1486, Short.MAX_VALUE)
+            .addComponent(jTabbedPane1)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -975,6 +1001,9 @@ public class FrmMain extends javax.swing.JFrame {
     private javax.swing.JLabel lblPath;
     private javax.swing.JLabel lblPath2;
     private javax.swing.JLabel lblPath3;
+    private javax.swing.JLabel lblSheetMain1;
+    private javax.swing.JLabel lblSheetMain2;
+    private javax.swing.JLabel lblSheetMain3;
     private javax.swing.JProgressBar pgbMain;
     private javax.swing.JProgressBar pgbMain2;
     private javax.swing.JProgressBar pgbMain3;

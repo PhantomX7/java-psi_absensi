@@ -90,6 +90,8 @@
                                       <Component id="btnLoadData" min="-2" max="-2" attributes="0"/>
                                       <EmptySpace type="separate" max="-2" attributes="0"/>
                                       <Component id="pgbMain" min="-2" pref="305" max="-2" attributes="0"/>
+                                      <EmptySpace type="separate" max="-2" attributes="0"/>
+                                      <Component id="lblSheetMain1" min="-2" pref="88" max="-2" attributes="0"/>
                                   </Group>
                               </Group>
                               <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
@@ -107,7 +109,10 @@
                       <Group type="103" groupAlignment="0" attributes="0">
                           <Component id="btnLoadData" min="-2" max="-2" attributes="0"/>
                           <Component id="dateChooserCombo" min="-2" max="-2" attributes="0"/>
-                          <Component id="pgbMain" min="-2" pref="27" max="-2" attributes="0"/>
+                          <Group type="103" groupAlignment="3" attributes="0">
+                              <Component id="pgbMain" alignment="3" min="-2" pref="27" max="-2" attributes="0"/>
+                              <Component id="lblSheetMain1" alignment="3" min="-2" max="-2" attributes="0"/>
+                          </Group>
                       </Group>
                       <EmptySpace min="-2" pref="9" max="-2" attributes="0"/>
                       <Component id="jScrollPane1" min="-2" pref="284" max="-2" attributes="0"/>
@@ -231,6 +236,11 @@
                 <Property name="stringPainted" type="boolean" value="true"/>
               </Properties>
             </Component>
+            <Component class="javax.swing.JLabel" name="lblSheetMain1">
+              <Properties>
+                <Property name="text" type="java.lang.String" value=" "/>
+              </Properties>
+            </Component>
           </SubComponents>
         </Container>
         <Container class="javax.swing.JPanel" name="jPanel2">
@@ -262,9 +272,11 @@
                                       <Component id="btnLoadData2" min="-2" pref="155" max="-2" attributes="0"/>
                                       <EmptySpace type="separate" max="-2" attributes="0"/>
                                       <Component id="pgbMain2" min="-2" pref="305" max="-2" attributes="0"/>
+                                      <EmptySpace type="separate" max="-2" attributes="0"/>
+                                      <Component id="lblSheetMain2" min="-2" pref="88" max="-2" attributes="0"/>
                                   </Group>
                               </Group>
-                              <EmptySpace min="1905" pref="993" max="32767" attributes="0"/>
+                              <EmptySpace min="2016" pref="887" max="32767" attributes="0"/>
                           </Group>
                           <Group type="102" alignment="0" attributes="0">
                               <Component id="btnExportToExcel2" min="-2" pref="161" max="-2" attributes="0"/>
@@ -302,7 +314,10 @@
                       <EmptySpace min="-2" pref="8" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="1" attributes="0">
                           <Component id="btnLoadData2" min="-2" max="-2" attributes="0"/>
-                          <Component id="pgbMain2" min="-2" pref="27" max="-2" attributes="0"/>
+                          <Group type="103" groupAlignment="3" attributes="0">
+                              <Component id="pgbMain2" alignment="3" min="-2" pref="27" max="-2" attributes="0"/>
+                              <Component id="lblSheetMain2" alignment="3" min="-2" max="-2" attributes="0"/>
+                          </Group>
                       </Group>
                       <EmptySpace max="-2" attributes="0"/>
                       <Component id="jScrollPane2" min="-2" pref="284" max="-2" attributes="0"/>
@@ -440,6 +455,11 @@
                 <Property name="stringPainted" type="boolean" value="true"/>
               </Properties>
             </Component>
+            <Component class="javax.swing.JLabel" name="lblSheetMain2">
+              <Properties>
+                <Property name="text" type="java.lang.String" value=" "/>
+              </Properties>
+            </Component>
           </SubComponents>
         </Container>
         <Container class="javax.swing.JPanel" name="jPanel3">
@@ -465,6 +485,8 @@
                                       <Component id="btnLoadData3" min="-2" pref="155" max="-2" attributes="0"/>
                                       <EmptySpace min="-2" pref="29" max="-2" attributes="0"/>
                                       <Component id="pgbMain3" min="-2" pref="303" max="-2" attributes="0"/>
+                                      <EmptySpace type="separate" max="-2" attributes="0"/>
+                                      <Component id="lblSheetMain3" min="-2" pref="90" max="-2" attributes="0"/>
                                       <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                                   </Group>
                               </Group>
@@ -509,6 +531,7 @@
                       <Group type="103" groupAlignment="3" attributes="0">
                           <Component id="btnLoadData3" alignment="3" min="-2" max="-2" attributes="0"/>
                           <Component id="pgbMain3" alignment="3" min="-2" pref="25" max="-2" attributes="0"/>
+                          <Component id="lblSheetMain3" alignment="3" min="-2" max="-2" attributes="0"/>
                       </Group>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
                       <Component id="jScrollPane3" min="-2" pref="284" max="-2" attributes="0"/>
@@ -680,6 +703,11 @@
             <Component class="javax.swing.JLabel" name="jLabel4">
               <Properties>
                 <Property name="text" type="java.lang.String" value="to:"/>
+              </Properties>
+            </Component>
+            <Component class="javax.swing.JLabel" name="lblSheetMain3">
+              <Properties>
+                <Property name="text" type="java.lang.String" value=" "/>
               </Properties>
             </Component>
           </SubComponents>
