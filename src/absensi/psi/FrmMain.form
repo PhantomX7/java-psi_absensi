@@ -140,7 +140,7 @@
                   <Properties>
                     <Property name="autoCreateRowSorter" type="boolean" value="true"/>
                     <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.editors2.TableModelEditor">
-                      <Table columnCount="8" rowCount="0">
+                      <Table columnCount="10" rowCount="0">
                         <Column editable="false" title="NIK" type="java.lang.String"/>
                         <Column editable="false" title="First name" type="java.lang.String"/>
                         <Column editable="false" title="Last name" type="java.lang.String"/>
@@ -149,11 +149,23 @@
                         <Column editable="false" title="Sign in" type="java.lang.String"/>
                         <Column editable="false" title="Sign out" type="java.lang.String"/>
                         <Column editable="false" title="Working hours" type="java.lang.String"/>
+                        <Column editable="false" title="telat" type="java.lang.Boolean"/>
+                        <Column editable="false" title="full working hours" type="java.lang.Boolean"/>
                       </Table>
                     </Property>
                     <Property name="columnModel" type="javax.swing.table.TableColumnModel" editor="org.netbeans.modules.form.editors2.TableColumnModelEditor">
                       <TableColumnModel selectionModel="0">
                         <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                          <Title/>
+                          <Editor/>
+                          <Renderer/>
+                        </Column>
+                        <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="false">
+                          <Title/>
+                          <Editor/>
+                          <Renderer/>
+                        </Column>
+                        <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="false">
                           <Title/>
                           <Editor/>
                           <Renderer/>
@@ -360,7 +372,7 @@
                   <Properties>
                     <Property name="autoCreateRowSorter" type="boolean" value="true"/>
                     <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.editors2.TableModelEditor">
-                      <Table columnCount="8" rowCount="0">
+                      <Table columnCount="10" rowCount="0">
                         <Column editable="false" title="NIK" type="java.lang.String"/>
                         <Column editable="false" title="First name" type="java.lang.String"/>
                         <Column editable="false" title="Last name" type="java.lang.String"/>
@@ -369,6 +381,8 @@
                         <Column editable="false" title="Sign in" type="java.lang.String"/>
                         <Column editable="false" title="Sign out" type="java.lang.String"/>
                         <Column editable="false" title="Working hours" type="java.lang.String"/>
+                        <Column editable="false" title="telat" type="java.lang.Boolean"/>
+                        <Column editable="true" title="full working hours" type="java.lang.Boolean"/>
                       </Table>
                     </Property>
                     <Property name="columnModel" type="javax.swing.table.TableColumnModel" editor="org.netbeans.modules.form.editors2.TableColumnModelEditor">
@@ -409,6 +423,16 @@
                           <Renderer/>
                         </Column>
                         <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="false">
+                          <Title/>
+                          <Editor/>
+                          <Renderer/>
+                        </Column>
+                        <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                          <Title/>
+                          <Editor/>
+                          <Renderer/>
+                        </Column>
+                        <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
                           <Title/>
                           <Editor/>
                           <Renderer/>

@@ -13,8 +13,8 @@ package util;
 //AKA connection String
 public class DbConn {
     public static final String JDBC_CLASS="com.mysql.jdbc.Driver";
-    public static final String JDBC_URL="jdbc:mysql://localhost:3306/hrd?useSSL=false";
+    public static final String JDBC_URL="jdbc:mysql://35.194.100.112:3306/hrd?useSSL=false";
     public static final String JDBC_USERNAME="root";
-    public static final String JDBC_PASSWORD="12345678";
+    public static final String JDBC_PASSWORD="psiuph2016";
     
 }

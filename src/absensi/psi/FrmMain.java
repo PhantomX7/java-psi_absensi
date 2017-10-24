@@ -64,6 +64,8 @@ public class FrmMain extends javax.swing.JFrame {
 
     private LoadWorker worker;
 
+    DateTimeFormatter formatter = DateTimeFormat.forPattern("HH:mm:ss");
+
     public FrmMain() {
         initComponents();
         FileNameExtensionFilter filter = new FileNameExtensionFilter("Excel", "xlsx");
@@ -105,6 +107,7 @@ public class FrmMain extends javax.swing.JFrame {
 
                 while (rowIter.hasNext()) {
                     XSSFRow myRow = (XSSFRow) rowIter.next();
+                    
                     Iterator cellIter = myRow.cellIterator();
                     if (row == 0) {
                         row++;
@@ -137,10 +140,10 @@ public class FrmMain extends javax.swing.JFrame {
 
                 for (int i = 0; i < list.size(); i++) {
                     // Prepare statement
-                    lblSheetMain1.setText("Sheet "+(x+1)+"/"+workBook.getNumberOfSheets());
-                    lblSheetMain2.setText("Sheet "+(x+1)+"/"+workBook.getNumberOfSheets());
-                    lblSheetMain3.setText("Sheet "+(x+1)+"/"+workBook.getNumberOfSheets());
-                    
+                    lblSheetMain1.setText("Sheet " + (x + 1) + "/" + workBook.getNumberOfSheets());
+                    lblSheetMain2.setText("Sheet " + (x + 1) + "/" + workBook.getNumberOfSheets());
+                    lblSheetMain3.setText("Sheet " + (x + 1) + "/" + workBook.getNumberOfSheets());
+
                     double percentage = (double) i * ((double) 100 / (list.size() - 1));
                     pgbMain.setValue((int) percentage);
                     pgbMain2.setValue((int) percentage);
@@ -208,6 +211,7 @@ public class FrmMain extends javax.swing.JFrame {
             data.add(nik);
             if (myRs.isBeforeFirst()) {
                 while (myRs.next()) {
+                    System.out.println(myRs.getString("first_name"));
                     data.add(myRs.getString("first_name"));
                     data.add(myRs.getString("last_name"));
                     data.add(myRs.getString("Department"));
@@ -231,15 +235,59 @@ public class FrmMain extends javax.swing.JFrame {
             myStmt.setString(5, nik);
             myStmt.setString(6, date);
             myRs = myStmt.executeQuery();
+
+            DateTime d2 = null;
+            DateTime d3 = null;
             while (myRs.next()) {
+                d2 = formatter.parseDateTime(myRs.getString("sign_in"));
+                d3 = formatter.parseDateTime(myRs.getString("working_hours"));
                 data.add(myRs.getString("sign_in"));
                 data.add(myRs.getString("sign_out"));
                 data.add(myRs.getString("working_hours"));
             }
+            String waktuTelat = getSignInTimeLimit(nik);
+
+            if (waktuTelat != null) {
+                DateTime d1 = formatter.parseDateTime(waktuTelat);
+                Period period = new Period(d1, d2);
+                if (period.getHours() > 0) {
+                    data.add(true);
+                } else {
+                    if (period.getMinutes() > 5) {
+                        data.add(true);
+                    } else {
+                        data.add(false);
+                    }
+                }
+            } else {
+                data.add(false);
+            }
+
+            if (d3.getHourOfDay() >= 9) {
+                data.add(true);
+            } else {
+                data.add(false);
+            }
+
             tableModel.addRow(data.toArray());
         } catch (SQLException ex) {
             Logger.getLogger(FrmMain.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    private String getSignInTimeLimit(String nik) {
+        try {
+            myStmt = myConn.prepareStatement("select jam_masuk from data_karyawan where nik=?;");
+            myStmt.setString(1, nik);
+            myRs = myStmt.executeQuery();
+            while (myRs.next()) {
+                return myRs.getString("jam_masuk");
+            }
+
+        } catch (SQLException ex) {
+            Logger.getLogger(FrmMain.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
     }
 
     //dosen tidak tetap
@@ -282,8 +330,6 @@ public class FrmMain extends javax.swing.JFrame {
             for (int x = i; x <= 8; x++) {
                 data.add("");
             }
-
-            DateTimeFormatter formatter = DateTimeFormat.forPattern("HH:mm:ss");
 
             DateTime d1 = formatter.parseDateTime((String) data.get(5));
             DateTime d2 = formatter.parseDateTime((String) data.get(3 + i));
@@ -416,14 +462,14 @@ public class FrmMain extends javax.swing.JFrame {
 
             },
             new String [] {
-                "NIK", "First name", "Last name", "Department", "Date", "Sign in", "Sign out", "Working hours"
+                "NIK", "First name", "Last name", "Department", "Date", "Sign in", "Sign out", "Working hours", "telat", "full working hours"
             }
         ) {
             Class[] types = new Class [] {
-                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
+                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Boolean.class, java.lang.Boolean.class
             };
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false
+                false, false, false, false, false, false, false, false, false, false
             };
 
             public Class getColumnClass(int columnIndex) {
@@ -443,6 +489,8 @@ public class FrmMain extends javax.swing.JFrame {
             tblAbsensi.getColumnModel().getColumn(5).setResizable(false);
             tblAbsensi.getColumnModel().getColumn(6).setResizable(false);
             tblAbsensi.getColumnModel().getColumn(7).setResizable(false);
+            tblAbsensi.getColumnModel().getColumn(8).setResizable(false);
+            tblAbsensi.getColumnModel().getColumn(9).setResizable(false);
         }
 
         dateChooserCombo.setCalendarPreferredSize(new java.awt.Dimension(360, 300));
@@ -527,14 +575,14 @@ public class FrmMain extends javax.swing.JFrame {
 
             },
             new String [] {
-                "NIK", "First name", "Last name", "Department", "Date", "Sign in", "Sign out", "Working hours"
+                "NIK", "First name", "Last name", "Department", "Date", "Sign in", "Sign out", "Working hours", "telat", "full working hours"
             }
         ) {
             Class[] types = new Class [] {
-                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
+                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Boolean.class, java.lang.Boolean.class
             };
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false
+                false, false, false, false, false, false, false, false, false, true
             };
 
             public Class getColumnClass(int columnIndex) {
@@ -819,13 +867,15 @@ public class FrmMain extends javax.swing.JFrame {
 
     private void loadTableToObject(JTable table) {
         objectList = new ArrayList<>();
-        Object[] a = {"NIK", "First Name", "Last Name", "Department", "Date", "Sign in", "Sign out", "Working hours"};
+        Object[] a = {"NIK", "First Name", "Last Name", "Department", "Date", "Sign in", "Sign out", "Working hours", "telat", "full working hours"};
         objectList.add(a);
         DefaultTableModel tableModel = (DefaultTableModel) table.getModel();
         for (int i = 0; i <= table.getRowCount() - 1; i++) {
             Object[] b = {tableModel.getValueAt(i, 0), tableModel.getValueAt(i, 1), tableModel.getValueAt(i, 2),
                 tableModel.getValueAt(i, 3), tableModel.getValueAt(i, 4), tableModel.getValueAt(i, 5),
-                tableModel.getValueAt(i, 6), tableModel.getValueAt(i, 7)};
+                tableModel.getValueAt(i, 6), tableModel.getValueAt(i, 7),
+                Boolean.valueOf(tableModel.getValueAt(i, 8).toString()) ? "TELAT" : "",
+                Boolean.valueOf(tableModel.getValueAt(i, 9).toString()) ? "" : "------"};
             objectList.add(b);
         }
     }
