@@ -6,6 +6,8 @@
 package absensi.psi;
 
 import datechooser.beans.DateChooserCombo;
+import java.awt.Color;
+import java.awt.Component;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -28,11 +30,17 @@ import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.SwingWorker;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import org.apache.poi.EncryptedDocumentException;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -107,7 +115,7 @@ public class FrmMain extends javax.swing.JFrame {
 
                 while (rowIter.hasNext()) {
                     XSSFRow myRow = (XSSFRow) rowIter.next();
-                    
+
                     Iterator cellIter = myRow.cellIterator();
                     if (row == 0) {
                         row++;
@@ -176,31 +184,6 @@ public class FrmMain extends javax.swing.JFrame {
     private void loadResultDataFromDatabase(String nik, String date, JTable table) {
 
         DefaultTableModel tableModel = (DefaultTableModel) table.getModel();
-//        try {
-//            myStmt = myConn.prepareStatement("select nik,First_Name,Last_Name,Department,date(date) as date,min(time(date))"
-//                    + " as sign_in,max(time(date)) as sign_out,timediff((select max(time(date))"
-//                    + " from full_data where nik=? and date(date)=?),"
-//                    + "(select min(time(date)) from full_data where nik=? and date(date)=?))"
-//                    + " as working_hours  from full_data where nik=? and date(date)=? ");
-//
-//            myStmt.setString(1, nik);
-//            myStmt.setString(2, date);
-//            myStmt.setString(3, nik);
-//            myStmt.setString(4, date);
-//            myStmt.setString(5, nik);
-//            myStmt.setString(6, date);
-//            // Execute statement
-//            myRs = myStmt.executeQuery();
-//            // Process result set
-//            while (myRs.next()) {
-//
-//                Object data[] = {nik, myRs.getString("first_name"), myRs.getString("last_name"), myRs.getString("Department"),
-//                    myRs.getString("date"), myRs.getString("sign_in"), myRs.getString("sign_out"), myRs.getString("working_hours")};
-//                tableModel.addRow(data);
-//            }
-//        } catch (SQLException ex) {
-//            showError("sql Exception");
-//        }
 
         ArrayList<Object> data = new ArrayList<>();
 
@@ -222,6 +205,10 @@ public class FrmMain extends javax.swing.JFrame {
                 data.add("");
             }
             data.add(date);
+
+            SimpleDateFormat format1 = new SimpleDateFormat("yyyy-MM-dd");
+            SimpleDateFormat simpleDateformat = new SimpleDateFormat("EEEE"); // the day of the week spelled out completely
+            data.add(simpleDateformat.format(format1.parse(date)));
 
             myStmt = myConn.prepareStatement("select min(time(date))"
                     + "as sign_in,max(time(date)) as sign_out,timediff((select max(time(date))"
@@ -245,6 +232,7 @@ public class FrmMain extends javax.swing.JFrame {
                 data.add(myRs.getString("sign_out"));
                 data.add(myRs.getString("working_hours"));
             }
+
             String waktuTelat = getSignInTimeLimit(nik);
 
             if (waktuTelat != null) {
@@ -270,9 +258,30 @@ public class FrmMain extends javax.swing.JFrame {
             }
 
             tableModel.addRow(data.toArray());
+            table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+                @Override
+                public Component getTableCellRendererComponent(JTable table,
+                        Object value, boolean isSelected, boolean hasFocus, int row, int col) {
+
+                    super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
+
+                    String status = (String) table.getModel().getValueAt(row, 5);
+                    if ("Saturday".equals(status)) {
+                        setBackground(Color.YELLOW);
+
+                    } else {
+                        setBackground(table.getBackground());
+                        setForeground(table.getForeground());
+                    }
+                    return this;
+                }
+            });
         } catch (SQLException ex) {
             Logger.getLogger(FrmMain.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ParseException ex) {
+            Logger.getLogger(FrmMain.class.getName()).log(Level.SEVERE, null, ex);
         }
+
     }
 
     private String getSignInTimeLimit(String nik) {
@@ -462,14 +471,14 @@ public class FrmMain extends javax.swing.JFrame {
 
             },
             new String [] {
-                "NIK", "First name", "Last name", "Department", "Date", "Sign in", "Sign out", "Working hours", "telat", "full working hours"
+                "NIK", "First name", "Last name", "Department", "Date", "Day", "Sign in", "Sign out", "Working hours", "telat", "full working hours"
             }
         ) {
             Class[] types = new Class [] {
-                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Boolean.class, java.lang.Boolean.class
+                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Boolean.class, java.lang.Boolean.class
             };
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false, false, false
+                false, false, false, false, false, false, false, false, false, false, false
             };
 
             public Class getColumnClass(int columnIndex) {
@@ -491,6 +500,7 @@ public class FrmMain extends javax.swing.JFrame {
             tblAbsensi.getColumnModel().getColumn(7).setResizable(false);
             tblAbsensi.getColumnModel().getColumn(8).setResizable(false);
             tblAbsensi.getColumnModel().getColumn(9).setResizable(false);
+            tblAbsensi.getColumnModel().getColumn(10).setResizable(false);
         }
 
         dateChooserCombo.setCalendarPreferredSize(new java.awt.Dimension(360, 300));
@@ -575,14 +585,14 @@ public class FrmMain extends javax.swing.JFrame {
 
             },
             new String [] {
-                "NIK", "First name", "Last name", "Department", "Date", "Sign in", "Sign out", "Working hours", "telat", "full working hours"
+                "NIK", "First name", "Last name", "Department", "Date", "Day", "Sign in", "Sign out", "Working hours", "telat", "full working hours"
             }
         ) {
             Class[] types = new Class [] {
-                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Boolean.class, java.lang.Boolean.class
+                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Boolean.class, java.lang.Boolean.class
             };
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false, false, true
+                false, false, false, false, false, false, false, false, false, false, false
             };
 
             public Class getColumnClass(int columnIndex) {
@@ -595,7 +605,6 @@ public class FrmMain extends javax.swing.JFrame {
         });
         jScrollPane2.setViewportView(tblAbsensi2);
         if (tblAbsensi2.getColumnModel().getColumnCount() > 0) {
-            tblAbsensi2.getColumnModel().getColumn(0).setResizable(false);
             tblAbsensi2.getColumnModel().getColumn(1).setResizable(false);
             tblAbsensi2.getColumnModel().getColumn(2).setResizable(false);
             tblAbsensi2.getColumnModel().getColumn(3).setResizable(false);
@@ -603,6 +612,9 @@ public class FrmMain extends javax.swing.JFrame {
             tblAbsensi2.getColumnModel().getColumn(5).setResizable(false);
             tblAbsensi2.getColumnModel().getColumn(6).setResizable(false);
             tblAbsensi2.getColumnModel().getColumn(7).setResizable(false);
+            tblAbsensi2.getColumnModel().getColumn(8).setResizable(false);
+            tblAbsensi2.getColumnModel().getColumn(9).setResizable(false);
+            tblAbsensi2.getColumnModel().getColumn(10).setResizable(false);
         }
 
         btnExportToExcel2.setText("Export to excel");
@@ -867,15 +879,15 @@ public class FrmMain extends javax.swing.JFrame {
 
     private void loadTableToObject(JTable table) {
         objectList = new ArrayList<>();
-        Object[] a = {"NIK", "First Name", "Last Name", "Department", "Date", "Sign in", "Sign out", "Working hours", "telat", "full working hours"};
+        Object[] a = {"NIK", "First Name", "Last Name", "Department", "Date", "Day", "Sign in", "Sign out", "Working hours", "telat", "full working hours"};
         objectList.add(a);
         DefaultTableModel tableModel = (DefaultTableModel) table.getModel();
         for (int i = 0; i <= table.getRowCount() - 1; i++) {
             Object[] b = {tableModel.getValueAt(i, 0), tableModel.getValueAt(i, 1), tableModel.getValueAt(i, 2),
                 tableModel.getValueAt(i, 3), tableModel.getValueAt(i, 4), tableModel.getValueAt(i, 5),
-                tableModel.getValueAt(i, 6), tableModel.getValueAt(i, 7),
-                Boolean.valueOf(tableModel.getValueAt(i, 8).toString()) ? "TELAT" : "",
-                Boolean.valueOf(tableModel.getValueAt(i, 9).toString()) ? "" : "------"};
+                tableModel.getValueAt(i, 6), tableModel.getValueAt(i, 7), tableModel.getValueAt(i, 8),
+                Boolean.valueOf(tableModel.getValueAt(i, 9).toString()) ? "TELAT" : "",
+                Boolean.valueOf(tableModel.getValueAt(i, 10).toString()) ? "" : "------"};
             objectList.add(b);
         }
     }
@@ -915,14 +927,41 @@ public class FrmMain extends javax.swing.JFrame {
 
             for (Object[] data : objectList) {
                 Row row = sheet.createRow(rowNum++);
+                boolean overTime = false;
                 int colNum = 0;
+                Cell cell = row.createCell(colNum);
+                if (((String) data[5]).equalsIgnoreCase("Saturday")) {
+                    overTime=true;
+                }
+                // get cell style
+                XSSFCellStyle style = (XSSFCellStyle) cell.getCellStyle();
+                // get default workbook style
+                XSSFCellStyle defaultStyle = workbook.getCellStyleAt((short) 0); // if both are equals create new style in workbook
+
+                if (style.equals(defaultStyle)) {
+                    style = workbook.createCellStyle();
+                }
+                // assign color
+                style.setFillForegroundColor(new XSSFColor(new java.awt.Color(244, 238, 66)));
+                style.setFillBackgroundColor(new XSSFColor(new java.awt.Color(244, 238, 66)));
+                style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+                // set style
                 for (Object field : data) {
-                    Cell cell = row.createCell(colNum++);
+
+                    cell = row.createCell(colNum++);
                     if (field instanceof String) {
+
                         cell.setCellValue((String) field);
+                        System.out.println(((String) field));
+
                     } else if (field instanceof Integer) {
                         cell.setCellValue((Integer) field);
                     }
+                    if(overTime){
+                        cell.setCellStyle(style);
+                    }
+
                 }
             }
 
